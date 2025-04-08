@@ -1,0 +1,13 @@
+{
+  "name": "test-browser-extension",
+  "version": "1.0.0",
+  "description": "This is a Manifest V3 learning project.",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": "https://github.com/Jeff-411/test-browser-extension",
+  "author": "",
+  "license": "ISC"
+}
