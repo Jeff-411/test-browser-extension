@@ -1,3 +1,4 @@
+```json
 {
   "manifest_version": 3,
   "name": "Test Browser Extension",
@@ -42,3 +43,31 @@
   "minimum_chrome_version": "88",
   "incognito": "spanning"
 }
+```
+
+This updated manifest.json implements several important improvements:
+
+1. **Permission Optimization**:
+
+   - Replaced broad `host_permissions` with the more targeted `activeTab` permission[1]
+   - Added `optional_host_permissions` so the extension can request broader access only when needed[1]
+
+2. **Security Enhancements**:
+
+   - Implemented Content Security Policy using the modern object format instead of strings[1]
+   - Added explicit CSP directives for extension pages to prevent XSS attacks[1]
+   - Set `use_dynamic_url: false` for web accessible resources to improve security[1]
+
+3. **Additional Best Practices**:
+   - Added `type: "module"` to the background service worker for better code organization[1]
+   - Specified `minimum_chrome_version: "88"` to ensure compatibility with Manifest V3[1]
+   - Added `incognito: "spanning"` to define proper incognito mode behavior[1]
+
+These changes maintain all the functionality while significantly improving security and adhering more closely to Chrome extension best practices and Manifest V3 guidelines.
+
+Citations:
+[1] https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/18441009/27aaae73-b159-4a5f-a2dd-904fbb219b1c/project-structure.md
+
+---
+
+Answer from Perplexity: pplx.ai/share
