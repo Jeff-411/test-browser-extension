@@ -1,3 +1,292 @@
+## background.js
+
+```javascript
+/**
+ * Background service worker for Test Browser Extension
+ * Implements event listeners and handles communication between extension components
+ */
+
+// Constants
+const STORAGE_KEYS = {
+  USER_SETTINGS: 'userSettings',
+  LAST_ERROR: 'lastError',
+  EXTENSION_STATE: 'extensionState',
+}
+
+const DEFAULT_SETTINGS = {
+  theme: 'light',
+  notifications: true,
+  autoAnalyze: false,
+  fontSize: 'medium',
+}
+
+// Initialize on installation or update
+chrome.runtime.onInstalled.addListener(async details => {
+  console.log(`Extension ${details.reason}: ${new Date().toISOString()}`)
+
+  try {
+    // Check if settings already exist
+    const result = await chrome.storage.local.get(STORAGE_KEYS.USER_SETTINGS)
+
+    if (!result || !result[STORAGE_KEYS.USER_SETTINGS]) {
+      // Initialize with default settings if not found
+      await chrome.storage.local.set({
+        [STORAGE_KEYS.USER_SETTINGS]: DEFAULT_SETTINGS,
+        [STORAGE_KEYS.EXTENSION_STATE]: {
+          installDate: new Date().toISOString(),
+          lastActive: new Date().toISOString(),
+          version: chrome.runtime.getManifest().version,
+        },
+      })
+      console.log('Default settings initialized successfully')
+    } else {
+      // Update existing settings with any new defaults
+      const updatedSettings = {
+        ...DEFAULT_SETTINGS,
+        ...result[STORAGE_KEYS.USER_SETTINGS],
+      }
+
+      await chrome.storage.local.set({
+        [STORAGE_KEYS.USER_SETTINGS]: updatedSettings,
+        [STORAGE_KEYS.EXTENSION_STATE]: {
+          lastUpdateDate: new Date().toISOString(),
+          lastActive: new Date().toISOString(),
+          version: chrome.runtime.getManifest().version,
+        },
+      })
+      console.log('Settings updated successfully')
+    }
+  } catch (error) {
+    console.error('Error initializing settings:', error)
+    // Store error information for diagnostic purposes
+    await chrome.storage.local
+      .set({
+        [STORAGE_KEYS.LAST_ERROR]: {
+          message: error.message,
+          stack: error.stack,
+          time: new Date().toISOString(),
+          context: 'onInstalled',
+        },
+      })
+      .catch(storageError => {
+        console.error('Failed to store error information:', storageError)
+      })
+  }
+})
+
+// Listen for messages from content scripts or popup
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log('Message received in background script:', message)
+
+  // Always verify message structure
+  if (!message || typeof message !== 'object' || !message.action) {
+    sendResponse({
+      success: false,
+      error: 'Invalid message format',
+    })
+    return false
+  }
+
+  // Handle different action types
+  switch (message.action) {
+    case 'getData':
+      handleGetData(message, sender, sendResponse)
+      break
+
+    case 'updateSettings':
+      handleUpdateSettings(message, sender, sendResponse)
+      break
+
+    case 'getState':
+      handleGetState(message, sender, sendResponse)
+      break
+
+    default:
+      console.warn(`Unknown action requested: ${message.action}`)
+      sendResponse({
+        success: false,
+        error: `Unknown action: ${message.action}`,
+      })
+      return false
+  }
+
+  // Keep the message channel open for async response
+  return true
+})
+
+/**
+ * Handles data retrieval requests
+ * @param {Object} message - The message object
+ * @param {Object} sender - The message sender
+ * @param {Function} sendResponse - The response callback
+ */
+async function handleGetData(message, sender, sendResponse) {
+  try {
+    // Simulate data retrieval operation
+    const data = {
+      timestamp: new Date().toISOString(),
+      randomValue: Math.random().toString(36).substring(2),
+      source: 'background script',
+      messageReceived: JSON.stringify(message),
+    }
+
+    updateLastActiveTime()
+
+    sendResponse({
+      success: true,
+      data,
+    })
+  } catch (error) {
+    console.error('Error handling getData request:', error)
+    logError(error, 'handleGetData')
+
+    sendResponse({
+      success: false,
+      error: error.message || 'Unknown error occurred',
+    })
+  }
+}
+
+/**
+ * Handles settings update requests
+ * @param {Object} message - The message object
+ * @param {Object} sender - The message sender
+ * @param {Function} sendResponse - The response callback
+ */
+async function handleUpdateSettings(message, sender, sendResponse) {
+  try {
+    if (!message.settings || typeof message.settings !== 'object') {
+      throw new Error('Invalid settings object')
+    }
+
+    // Retrieve current settings
+    const result = await chrome.storage.local.get(STORAGE_KEYS.USER_SETTINGS)
+    const currentSettings = result[STORAGE_KEYS.USER_SETTINGS] || DEFAULT_SETTINGS
+
+    // Update with new settings
+    const updatedSettings = {
+      ...currentSettings,
+      ...message.settings,
+    }
+
+    // Validate settings
+    if (
+      updatedSettings.fontSize &&
+      !['small', 'medium', 'large'].includes(updatedSettings.fontSize)
+    ) {
+      throw new Error('Invalid font size value')
+    }
+
+    // Save updated settings
+    await chrome.storage.local.set({
+      [STORAGE_KEYS.USER_SETTINGS]: updatedSettings,
+    })
+
+    updateLastActiveTime()
+
+    sendResponse({
+      success: true,
+      settings: updatedSettings,
+    })
+  } catch (error) {
+    console.error('Error updating settings:', error)
+    logError(error, 'handleUpdateSettings')
+
+    sendResponse({
+      success: false,
+      error: error.message || 'Failed to update settings',
+    })
+  }
+}
+
+/**
+ * Handles state information requests
+ * @param {Object} message - The message object
+ * @param {Object} sender - The message sender
+ * @param {Function} sendResponse - The response callback
+ */
+async function handleGetState(message, sender, sendResponse) {
+  try {
+    const result = await chrome.storage.local.get([
+      STORAGE_KEYS.USER_SETTINGS,
+      STORAGE_KEYS.EXTENSION_STATE,
+    ])
+
+    updateLastActiveTime()
+
+    sendResponse({
+      success: true,
+      state: {
+        settings: result[STORAGE_KEYS.USER_SETTINGS] || DEFAULT_SETTINGS,
+        extensionState: result[STORAGE_KEYS.EXTENSION_STATE] || {},
+        version: chrome.runtime.getManifest().version,
+        currentTime: new Date().toISOString(),
+      },
+    })
+  } catch (error) {
+    console.error('Error retrieving state:', error)
+    logError(error, 'handleGetState')
+
+    sendResponse({
+      success: false,
+      error: error.message || 'Failed to retrieve state',
+    })
+  }
+}
+
+/**
+ * Updates the last active timestamp
+ */
+async function updateLastActiveTime() {
+  try {
+    const result = await chrome.storage.local.get(STORAGE_KEYS.EXTENSION_STATE)
+    const currentState = result[STORAGE_KEYS.EXTENSION_STATE] || {}
+
+    await chrome.storage.local.set({
+      [STORAGE_KEYS.EXTENSION_STATE]: {
+        ...currentState,
+        lastActive: new Date().toISOString(),
+      },
+    })
+  } catch (error) {
+    console.error('Error updating last active time:', error)
+    // Non-critical error, just log it
+  }
+}
+
+/**
+ * Logs error information to storage for diagnostic purposes
+ * @param {Error} error - The error object
+ * @param {string} context - The context where the error occurred
+ */
+async function logError(error, context) {
+  try {
+    // Get existing errors
+    const result = await chrome.storage.local.get('errorLog')
+    const errorLog = result.errorLog || []
+
+    // Add new error (keeping only the last 10 errors)
+    errorLog.unshift({
+      message: error.message,
+      stack: error.stack,
+      time: new Date().toISOString(),
+      context: context,
+    })
+
+    // Store updated error log (limited to 10 entries)
+    await chrome.storage.local.set({
+      errorLog: errorLog.slice(0, 10),
+      [STORAGE_KEYS.LAST_ERROR]: errorLog[0],
+    })
+  } catch (storageError) {
+    console.error('Failed to log error information:', storageError)
+  }
+}
+```
+
+## popup.js
+
+```javascript
 /**
  * Main popup functionality for Test Browser Extension
  * Handles user interaction and communication with background/content scripts
@@ -183,7 +472,7 @@ async function notifyHandler() {
 
 /**
  * Helper function to get the current active tab
- * @returns {Promise<chrome.tabs.Tab>} The current active tab
+ * @returns {Promise} The current active tab
  */
 async function getCurrentTab() {
   return new Promise((resolve, reject) => {
@@ -214,7 +503,7 @@ async function getCurrentTab() {
  * @param {number} tabId - The ID of the tab to send the message to
  * @param {Object} message - The message to send
  * @param {number} timeout - Timeout in milliseconds
- * @returns {Promise<Object>} The response from the content script
+ * @returns {Promise} The response from the content script
  */
 function sendMessageWithTimeout(tabId, message, timeout) {
   return new Promise((resolve, reject) => {
@@ -327,27 +616,27 @@ function displayResults(data) {
     return
   }
 
-  let html = '<div class="message success">Page analysis complete!</div>'
+  let html = 'Page analysis complete!'
 
-  html += '<div class="data-item">'
-  html += '<span class="data-label">Page Title:</span>'
-  html += '<span class="data-value">' + sanitizeHTML(data.title) + '</span>'
-  html += '</div>'
+  html += ''
+  html += 'Page Title:'
+  html += '' + sanitizeHTML(data.title) + ''
+  html += ''
 
-  html += '<div class="data-item">'
-  html += '<span class="data-label">Headings:</span>'
-  html += '<span class="data-value">' + sanitizeHTML(String(data.headings)) + '</span>'
-  html += '</div>'
+  html += ''
+  html += 'Headings:'
+  html += '' + sanitizeHTML(String(data.headings)) + ''
+  html += ''
 
-  html += '<div class="data-item">'
-  html += '<span class="data-label">Paragraphs:</span>'
-  html += '<span class="data-value">' + sanitizeHTML(String(data.paragraphs)) + '</span>'
-  html += '</div>'
+  html += ''
+  html += 'Paragraphs:'
+  html += '' + sanitizeHTML(String(data.paragraphs)) + ''
+  html += ''
 
-  html += '<div class="data-item">'
-  html += '<span class="data-label">Links:</span>'
-  html += '<span class="data-value">' + sanitizeHTML(String(data.links)) + '</span>'
-  html += '</div>'
+  html += ''
+  html += 'Links:'
+  html += '' + sanitizeHTML(String(data.links)) + ''
+  html += ''
 
   if (elements.resultsContent) {
     elements.resultsContent.innerHTML = html
@@ -362,10 +651,10 @@ function displayResults(data) {
 function showLoading(message) {
   if (elements.resultsContent) {
     elements.resultsContent.innerHTML = `
-      <div class="loading">
-        <div class="spinner"></div>
-        <p>${sanitizeHTML(message || 'Loading...')}</p>
-      </div>
+      
+        
+        ${sanitizeHTML(message || 'Loading...')}
+      
     `
   }
 }
@@ -378,13 +667,13 @@ function showLoading(message) {
 function showError(message, action = '') {
   console.warn('Error shown to user:', message)
 
-  let html = `<div class="message error">${sanitizeHTML(message)}</div>`
+  let html = `${sanitizeHTML(message)}`
 
   if (action) {
     html += `
-      <button class="retry-button" data-action="${sanitizeHTML(action)}">
+      
         Try Again
-      </button>
+      
     `
   }
 
@@ -400,10 +689,10 @@ function showError(message, action = '') {
  */
 function showFatalError(message) {
   document.body.innerHTML = `
-    <div class="fatal-error">
-      <div class="message error">${sanitizeHTML(message)}</div>
-      <p>Please try reloading the extension or contact support if the problem persists.</p>
-    </div>
+    
+      ${sanitizeHTML(message)}
+      Please try reloading the extension or contact support if the problem persists.
+    
   `
 }
 
@@ -414,7 +703,7 @@ function showFatalError(message) {
 function showSuccess(message) {
   if (elements.resultsContent) {
     elements.resultsContent.innerHTML = `
-      <div class="message success">${sanitizeHTML(message)}</div>
+      ${sanitizeHTML(message)}
     `
     fadeIn(elements.resultsContent)
   }
@@ -459,3 +748,43 @@ function sanitizeHTML(str) {
   temp.textContent = str
   return temp.innerHTML
 }
+```
+
+These updated files feature significantly improved error handling with:
+
+1. **Comprehensive Error Management**:
+
+   - Detailed error objects with context
+   - Error logging to storage for diagnostics
+   - User-friendly error messages with retry options
+
+2. **Timeout Handling**:
+
+   - All asynchronous operations now have timeouts
+   - Prevents operations from hanging indefinitely
+
+3. **Data Validation**:
+
+   - Extensive input validation for all operations
+   - Type checking and structure validation
+
+4. **Defensive Programming**:
+
+   - Null/undefined checks throughout
+   - Safe property access patterns
+   - Proper separation of concerns
+
+5. **User Feedback**:
+   - Loading states with visual indicators
+   - Clear success/error messaging
+   - Retry mechanisms for failed operations
+
+These improvements will make the extension more robust, providing better user experience and easier debugging when issues occur.
+
+Citations:
+[1] https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/18441009/27aaae73-b159-4a5f-a2dd-904fbb219b1c/project-structure.md
+[2] https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/collection_dafc2955-8f1b-4c2a-8c51-12299e3e7166/979ee60c-328a-47c6-a1a5-409045025021/README.md
+
+---
+
+Answer from Perplexity: pplx.ai/share

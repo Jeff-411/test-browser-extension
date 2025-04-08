@@ -1,34 +1,281 @@
-// Background service worker for Test Browser Extension
-console.log('Background service worker initialized')
+/**
+ * Background service worker for Test Browser Extension
+ * Implements event listeners and handles communication between extension components
+ */
 
-// Listen for installation
-chrome.runtime.onInstalled.addListener(details => {
-  console.log('Extension installed:', details.reason)
+// Constants
+const STORAGE_KEYS = {
+  USER_SETTINGS: 'userSettings',
+  LAST_ERROR: 'lastError',
+  EXTENSION_STATE: 'extensionState',
+}
 
-  // Initialize storage with default values
-  chrome.storage.local.set(
-    {
-      userSettings: {
-        theme: 'light',
-        notifications: true,
-      },
-    },
-    () => {
-      console.log('Default settings initialized')
+const DEFAULT_SETTINGS = {
+  theme: 'light',
+  notifications: true,
+  autoAnalyze: false,
+  fontSize: 'medium',
+}
+
+// Initialize on installation or update
+chrome.runtime.onInstalled.addListener(async details => {
+  console.log(`Extension ${details.reason}: ${new Date().toISOString()}`)
+
+  try {
+    // Check if settings already exist
+    const result = await chrome.storage.local.get(STORAGE_KEYS.USER_SETTINGS)
+
+    if (!result || !result[STORAGE_KEYS.USER_SETTINGS]) {
+      // Initialize with default settings if not found
+      await chrome.storage.local.set({
+        [STORAGE_KEYS.USER_SETTINGS]: DEFAULT_SETTINGS,
+        [STORAGE_KEYS.EXTENSION_STATE]: {
+          installDate: new Date().toISOString(),
+          lastActive: new Date().toISOString(),
+          version: chrome.runtime.getManifest().version,
+        },
+      })
+      console.log('Default settings initialized successfully')
+    } else {
+      // Update existing settings with any new defaults
+      const updatedSettings = {
+        ...DEFAULT_SETTINGS,
+        ...result[STORAGE_KEYS.USER_SETTINGS],
+      }
+
+      await chrome.storage.local.set({
+        [STORAGE_KEYS.USER_SETTINGS]: updatedSettings,
+        [STORAGE_KEYS.EXTENSION_STATE]: {
+          lastUpdateDate: new Date().toISOString(),
+          lastActive: new Date().toISOString(),
+          version: chrome.runtime.getManifest().version,
+        },
+      })
+      console.log('Settings updated successfully')
     }
-  )
+  } catch (error) {
+    console.error('Error initializing settings:', error)
+    // Store error information for diagnostic purposes
+    await chrome.storage.local
+      .set({
+        [STORAGE_KEYS.LAST_ERROR]: {
+          message: error.message,
+          stack: error.stack,
+          time: new Date().toISOString(),
+          context: 'onInstalled',
+        },
+      })
+      .catch(storageError => {
+        console.error('Failed to store error information:', storageError)
+      })
+  }
 })
 
 // Listen for messages from content scripts or popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log('Message received in background script:', message)
 
-  if (message.action === 'getData') {
+  // Always verify message structure
+  if (!message || typeof message !== 'object' || !message.action) {
     sendResponse({
-      success: true,
-      data: 'Sample data from background script',
+      success: false,
+      error: 'Invalid message format',
     })
+    return false
   }
 
-  return true // Keep the message channel open for async response
+  // Handle different action types
+  switch (message.action) {
+    case 'getData':
+      handleGetData(message, sender, sendResponse)
+      break
+
+    case 'updateSettings':
+      handleUpdateSettings(message, sender, sendResponse)
+      break
+
+    case 'getState':
+      handleGetState(message, sender, sendResponse)
+      break
+
+    default:
+      console.warn(`Unknown action requested: ${message.action}`)
+      sendResponse({
+        success: false,
+        error: `Unknown action: ${message.action}`,
+      })
+      return false
+  }
+
+  // Keep the message channel open for async response
+  return true
 })
+
+/**
+ * Handles data retrieval requests
+ * @param {Object} message - The message object
+ * @param {Object} sender - The message sender
+ * @param {Function} sendResponse - The response callback
+ */
+async function handleGetData(message, sender, sendResponse) {
+  try {
+    // Simulate data retrieval operation
+    const data = {
+      timestamp: new Date().toISOString(),
+      randomValue: Math.random().toString(36).substring(2),
+      source: 'background script',
+      messageReceived: JSON.stringify(message),
+    }
+
+    updateLastActiveTime()
+
+    sendResponse({
+      success: true,
+      data,
+    })
+  } catch (error) {
+    console.error('Error handling getData request:', error)
+    logError(error, 'handleGetData')
+
+    sendResponse({
+      success: false,
+      error: error.message || 'Unknown error occurred',
+    })
+  }
+}
+
+/**
+ * Handles settings update requests
+ * @param {Object} message - The message object
+ * @param {Object} sender - The message sender
+ * @param {Function} sendResponse - The response callback
+ */
+async function handleUpdateSettings(message, sender, sendResponse) {
+  try {
+    if (!message.settings || typeof message.settings !== 'object') {
+      throw new Error('Invalid settings object')
+    }
+
+    // Retrieve current settings
+    const result = await chrome.storage.local.get(STORAGE_KEYS.USER_SETTINGS)
+    const currentSettings = result[STORAGE_KEYS.USER_SETTINGS] || DEFAULT_SETTINGS
+
+    // Update with new settings
+    const updatedSettings = {
+      ...currentSettings,
+      ...message.settings,
+    }
+
+    // Validate settings
+    if (
+      updatedSettings.fontSize &&
+      !['small', 'medium', 'large'].includes(updatedSettings.fontSize)
+    ) {
+      throw new Error('Invalid font size value')
+    }
+
+    // Save updated settings
+    await chrome.storage.local.set({
+      [STORAGE_KEYS.USER_SETTINGS]: updatedSettings,
+    })
+
+    updateLastActiveTime()
+
+    sendResponse({
+      success: true,
+      settings: updatedSettings,
+    })
+  } catch (error) {
+    console.error('Error updating settings:', error)
+    logError(error, 'handleUpdateSettings')
+
+    sendResponse({
+      success: false,
+      error: error.message || 'Failed to update settings',
+    })
+  }
+}
+
+/**
+ * Handles state information requests
+ * @param {Object} message - The message object
+ * @param {Object} sender - The message sender
+ * @param {Function} sendResponse - The response callback
+ */
+async function handleGetState(message, sender, sendResponse) {
+  try {
+    const result = await chrome.storage.local.get([
+      STORAGE_KEYS.USER_SETTINGS,
+      STORAGE_KEYS.EXTENSION_STATE,
+    ])
+
+    updateLastActiveTime()
+
+    sendResponse({
+      success: true,
+      state: {
+        settings: result[STORAGE_KEYS.USER_SETTINGS] || DEFAULT_SETTINGS,
+        extensionState: result[STORAGE_KEYS.EXTENSION_STATE] || {},
+        version: chrome.runtime.getManifest().version,
+        currentTime: new Date().toISOString(),
+      },
+    })
+  } catch (error) {
+    console.error('Error retrieving state:', error)
+    logError(error, 'handleGetState')
+
+    sendResponse({
+      success: false,
+      error: error.message || 'Failed to retrieve state',
+    })
+  }
+}
+
+/**
+ * Updates the last active timestamp
+ */
+async function updateLastActiveTime() {
+  try {
+    const result = await chrome.storage.local.get(STORAGE_KEYS.EXTENSION_STATE)
+    const currentState = result[STORAGE_KEYS.EXTENSION_STATE] || {}
+
+    await chrome.storage.local.set({
+      [STORAGE_KEYS.EXTENSION_STATE]: {
+        ...currentState,
+        lastActive: new Date().toISOString(),
+      },
+    })
+  } catch (error) {
+    console.error('Error updating last active time:', error)
+    // Non-critical error, just log it
+  }
+}
+
+/**
+ * Logs error information to storage for diagnostic purposes
+ * @param {Error} error - The error object
+ * @param {string} context - The context where the error occurred
+ */
+async function logError(error, context) {
+  try {
+    // Get existing errors
+    const result = await chrome.storage.local.get('errorLog')
+    const errorLog = result.errorLog || []
+
+    // Add new error (keeping only the last 10 errors)
+    errorLog.unshift({
+      message: error.message,
+      stack: error.stack,
+      time: new Date().toISOString(),
+      context: context,
+    })
+
+    // Store updated error log (limited to 10 entries)
+    await chrome.storage.local.set({
+      errorLog: errorLog.slice(0, 10),
+      [STORAGE_KEYS.LAST_ERROR]: errorLog[0],
+    })
+  } catch (storageError) {
+    console.error('Failed to log error information:', storageError)
+  }
+}
