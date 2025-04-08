@@ -2,7 +2,12 @@
   "manifest_version": 3,
   "name": "Test Browser Extension",
   "version": "1.0.0",
-  "description": "A simple test browser extension with optimized permissions and security features",
+  "description": "A simple test browser extension",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -13,11 +18,10 @@
     "default_title": "Test Browser Extension"
   },
   "background": {
-    "service_worker": "background.js",
-    "type": "module"
+    "service_worker": "background.js"
   },
-  "permissions": ["storage", "activeTab"],
-  "optional_host_permissions": ["https://*/*"],
+  "permissions": ["storage"],
+  "host_permissions": ["https://*/*"],
   "options_page": "options.html",
   "content_scripts": [
     {
@@ -29,16 +33,9 @@
   "web_accessible_resources": [
     {
       "resources": ["images/*"],
-      "matches": ["https://*/*"],
-      "use_dynamic_url": false
+      "matches": ["https://*/*"]
     }
   ],
-  "content_security_policy": {
-    "extension_pages": "default-src 'self'; script-src 'self'; object-src 'none'; connect-src 'self'",
-    "sandbox": "sandbox allow-scripts allow-forms allow-popups allow-modals; script-src 'self'; worker-src 'self'"
-  },
   "author": "Jeff-411",
-  "homepage_url": "https://github.com/Jeff-411/test-browser-extension",
-  "minimum_chrome_version": "88",
-  "incognito": "spanning"
+  "homepage_url": "https://github.com/Jeff-411/test-browser-extension"
 }
