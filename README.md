@@ -6,7 +6,7 @@ This is a learning project.
 
 ## Goal
 
-Develop a simple Chrome Manifest V3-compliant sideloading browser extension that can be deployed and updated from the public GitHub repository at https://github.com/Jeff-411/test-browser-extension.
+Develop a simple "Hello world" type Chrome Manifest V3-compliant sideloading browser extension that can be deployed and updated from the public GitHub repository at https://github.com/Jeff-411/test-browser-extension.
 
 ## Development environment
 
