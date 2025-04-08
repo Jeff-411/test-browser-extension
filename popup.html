@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Browser Extension</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Test Browser Extension</h1>
+      </header>
+
+      <main>
+        <div class="status-card">
+          <div class="status-icon active"></div>
+          <p>Extension is <span id="status-text">active</span></p>
+        </div>
+
+        <div class="action-buttons">
+          <button id="analyze-page">Analyze Page</button>
+          <button id="notify">Show Notification</button>
+        </div>
+
+        <div class="results-container" id="results">
+          <h2>Results</h2>
+          <div id="results-content">
+            <p>Click "Analyze Page" to see information about the current page.</p>
+          </div>
+        </div>
+      </main>
+
+      <footer>
+        <p>v1.0.0 | <a href="#" id="open-options">Options</a></p>
+      </footer>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
