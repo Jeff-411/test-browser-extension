@@ -71,6 +71,42 @@ When updates are available:
 3. Find "Test Browser Extension" and click the refresh icon
 4. If that doesn't work, remove the extension and reload it using "Load unpacked"
 
+## Deployment and Updates
+
+### Initial Setup
+
+1. Generate your extension ID by loading it in Chrome at least once
+2. Add your extension ID as a GitHub repository secret named `EXTENSION_ID`
+
+### Creating a New Release
+
+To create a new release:
+
+1. Run one of the following commands based on the type of update:
+
+   ```bash
+   npm run version:patch  # For bug fixes (1.0.0 -> 1.0.1)
+   npm run version:minor  # For new features (1.0.0 -> 1.1.0)
+   npm run version:major  # For breaking changes (1.0.0 -> 2.0.0)
+   ```
+
+2. Run the release command to push changes and trigger the deployment:
+   ```bash
+   npm run release
+   ```
+
+This will:
+
+- Update the version in package.json and manifest.json
+- Create a git tag
+- Trigger the GitHub Actions workflow
+- Create a GitHub release with the extension package
+- Generate and upload the updates.xml file
+
+### Automatic Updates
+
+The extension will automatically check for updates using the update_url in manifest.json. When an update is available, Chrome will download and install it automatically.
+
 ## Project Structure
 
 ```
