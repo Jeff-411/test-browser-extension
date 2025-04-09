@@ -1,4 +1,5 @@
 /**
+ * Version: UPDATE 1S
  * Background service worker for Test Browser Extension
  * Implements event listeners and handles communication between extension components
  */
@@ -24,6 +25,16 @@ chrome.runtime.onInstalled.addListener(async details => {
   try {
     // Check if settings already exist
     const result = await chrome.storage.local.get(STORAGE_KEYS.USER_SETTINGS)
+
+    // Added to handle Issue2
+    for (const tab of tabs) {
+      try {
+        await injectContentScript(tab.id)
+      } catch (error) {
+        console.warn('Failed to inject into tab:', tab.id, error)
+        // Continue with other tabs even if one fails
+      }
+    }
 
     if (!result || !result[STORAGE_KEYS.USER_SETTINGS]) {
       // Initialize with default settings if not found
@@ -112,6 +123,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 })
 
 // Handle navigation in single-page applications with proper filtering
+// - Updated to handle Issue1
 chrome.webNavigation.onHistoryStateUpdated.addListener(
   function (details) {
     // Only inject if this is a top-level frame, not iframes
@@ -144,6 +156,25 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(
   },
   { url: [{ schemes: ['http', 'https'] }] }
 )
+
+/**
+ * Added to handle Issue2
+ * Injects content script into specified tab
+ * @param {number} tabId - The ID of the tab
+ * @returns {Promise} Resolves when injection is complete
+ */
+async function injectContentScript(tabId) {
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ['content.js'],
+    })
+    console.log('Content script injected successfully into tab:', tabId)
+  } catch (error) {
+    console.error('Content script injection failed for tab:', tabId, error)
+    throw error
+  }
+}
 
 /**
  * Handles data retrieval requests

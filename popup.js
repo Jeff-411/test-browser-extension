@@ -1,4 +1,5 @@
 /**
+ * Version: ORIGINAL
  * Main popup functionality for Test Browser Extension
  * Handles user interaction and communication with background/content scripts
  */
