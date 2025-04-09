@@ -1,5 +1,4 @@
 /**
- * Version: UPDATE 1S
  * Background service worker for Test Browser Extension
  * Implements event listeners and handles communication between extension components
  */
@@ -23,10 +22,9 @@ chrome.runtime.onInstalled.addListener(async details => {
   console.log(`Extension ${details.reason}: ${new Date().toISOString()}`)
 
   try {
-    // Check if settings already exist
-    const result = await chrome.storage.local.get(STORAGE_KEYS.USER_SETTINGS)
+    // Inject content script into all existing tabs - Added to resolve Issue #2
+    const tabs = await chrome.tabs.query({ url: ['http://*/*', 'https://*/*'] })
 
-    // Added to handle Issue2
     for (const tab of tabs) {
       try {
         await injectContentScript(tab.id)
@@ -35,6 +33,9 @@ chrome.runtime.onInstalled.addListener(async details => {
         // Continue with other tabs even if one fails
       }
     }
+
+    // Check if settings already exist
+    const result = await chrome.storage.local.get(STORAGE_KEYS.USER_SETTINGS)
 
     if (!result || !result[STORAGE_KEYS.USER_SETTINGS]) {
       // Initialize with default settings if not found
@@ -123,7 +124,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 })
 
 // Handle navigation in single-page applications with proper filtering
-// - Updated to handle Issue1
+// *** Updated to resolve Issue #2
 chrome.webNavigation.onHistoryStateUpdated.addListener(
   function (details) {
     // Only inject if this is a top-level frame, not iframes
@@ -158,12 +159,14 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(
 )
 
 /**
- * Added to handle Issue2
+ * *** Added to resolve Issue #2
  * Injects content script into specified tab
  * @param {number} tabId - The ID of the tab
  * @returns {Promise} Resolves when injection is complete
  */
+//
 async function injectContentScript(tabId) {
+  //
   try {
     await chrome.scripting.executeScript({
       target: { tabId },
