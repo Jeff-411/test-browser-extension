@@ -111,6 +111,40 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true
 })
 
+// Handle navigation in single-page applications with proper filtering
+chrome.webNavigation.onHistoryStateUpdated.addListener(
+  function (details) {
+    // Only inject if this is a top-level frame, not iframes
+    if (details.frameId === 0) {
+      console.log('History state updated, re-injecting content script:', details.url)
+
+      // Use chrome.scripting.executeScript (Manifest V3) instead of deprecated chrome.tabs.executeScript
+      chrome.scripting
+        .executeScript({
+          target: { tabId: details.tabId },
+          files: ['content.js'],
+        })
+        .catch(err => {
+          console.error('Content script injection failed:', err)
+          logError(new Error(err.message || 'Script injection failed'), 'historyStateUpdated')
+        })
+    }
+  },
+  { url: [{ schemes: ['http', 'https'] }] } // Only run on http/https URLs
+)
+
+// Inject content script on every navigation completion
+// chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+//   if (changeInfo.status === 'complete' && tab.url.startsWith('http')) {
+//     chrome.scripting
+//       .executeScript({
+//         target: { tabId },
+//         files: ['content.js'],
+//       })
+//       .catch(e => console.error(e))
+//   }
+// })
+
 /**
  * Handles data retrieval requests
  * @param {Object} message - The message object
