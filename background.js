@@ -133,18 +133,6 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(
   { url: [{ schemes: ['http', 'https'] }] } // Only run on http/https URLs
 )
 
-// Inject content script on every navigation completion
-// chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-//   if (changeInfo.status === 'complete' && tab.url.startsWith('http')) {
-//     chrome.scripting
-//       .executeScript({
-//         target: { tabId },
-//         files: ['content.js'],
-//       })
-//       .catch(e => console.error(e))
-//   }
-// })
-
 /**
  * Handles data retrieval requests
  * @param {Object} message - The message object
