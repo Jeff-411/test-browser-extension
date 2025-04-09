@@ -116,21 +116,33 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(
   function (details) {
     // Only inject if this is a top-level frame, not iframes
     if (details.frameId === 0) {
-      console.log('History state updated, re-injecting content script:', details.url)
+      console.log('History state updated:', details.url)
 
-      // Use chrome.scripting.executeScript (Manifest V3) instead of deprecated chrome.tabs.executeScript
-      chrome.scripting
-        .executeScript({
-          target: { tabId: details.tabId },
-          files: ['content.js'],
-        })
-        .catch(err => {
-          console.error('Content script injection failed:', err)
-          logError(new Error(err.message || 'Script injection failed'), 'historyStateUpdated')
-        })
+      // Check if we have permission first
+      chrome.permissions.contains(
+        {
+          permissions: ['scripting'],
+          origins: [details.url],
+        },
+        hasPermission => {
+          if (hasPermission) {
+            chrome.scripting
+              .executeScript({
+                target: { tabId: details.tabId },
+                files: ['content.js'],
+              })
+              .catch(err => {
+                console.error('Content script injection failed:', err)
+                logError(new Error(err.message || 'Script injection failed'), 'historyStateUpdated')
+              })
+          } else {
+            console.log('No permission to inject script into:', details.url)
+          }
+        }
+      )
     }
   },
-  { url: [{ schemes: ['http', 'https'] }] } // Only run on http/https URLs
+  { url: [{ schemes: ['http', 'https'] }] }
 )
 
 /**
