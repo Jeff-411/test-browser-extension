@@ -1,5 +1,8 @@
 // Content script for Test Browser Extension
-console.log('Test Browser Extension content script loaded')
+if (!window._testExtensionInitialized) {
+  window._testExtensionInitialized = true
+  console.log('Test Browser Extension content script loaded')
+}
 
 // Function to show notification banner
 function showNotification() {
