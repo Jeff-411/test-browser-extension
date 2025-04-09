@@ -26,7 +26,7 @@ jobs:
           -x "*.github*" \
           -x "node_modules/*" \
           -x "docs/*" \
-          -x "*.md" \
+          -x "*.md"
 
       - name: Generate updates.xml
         run: |
