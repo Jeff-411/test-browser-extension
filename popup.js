@@ -1,4 +1,5 @@
 /**
+ * Version: ORIGINAL
  * Main popup functionality for Test Browser Extension
  * Handles user interaction and communication with background/content scripts
  */
@@ -18,6 +19,7 @@ const ERROR_MESSAGES = {
   BACKGROUND_ERROR: 'Could not connect to the extension background service.',
   TIMEOUT: 'The operation timed out. Please try again.',
   GENERIC: 'An unexpected error occurred. Please try again.',
+  CONNECTION_FAILED: 'Could not establish connection to the page. Try reloading the page first.',
 }
 
 // Store DOM references
@@ -87,7 +89,7 @@ function setupEventListeners() {
     chrome.runtime.openOptionsPage()
   })
 
-  // Add error retry functionality
+  // Add error retry and reload functionality
   document.addEventListener('click', function (e) {
     if (e.target.classList.contains('retry-button')) {
       e.preventDefault()
@@ -97,8 +99,23 @@ function setupEventListeners() {
       } else if (action === 'notify') {
         notifyHandler()
       }
+    } else if (e.target.classList.contains('reload-button')) {
+      e.preventDefault()
+      reloadCurrentTab()
     }
   })
+}
+
+/**
+ * Reload the current tab
+ */
+function reloadCurrentTab() {
+  if (currentTab && currentTab.id) {
+    chrome.tabs.reload(currentTab.id, function () {
+      // Show loading message after reload is triggered
+      showLoading('Reloading page...')
+    })
+  }
 }
 
 /**
@@ -130,7 +147,12 @@ async function analyzePageHandler() {
     }
 
     if (!response.success) {
-      throw new Error(response.error || ERROR_MESSAGES.CONTENT_SCRIPT_ERROR)
+      if (response.needsReload) {
+        showError(response.error || ERROR_MESSAGES.CONNECTION_FAILED, '', true)
+      } else {
+        throw new Error(response.error || ERROR_MESSAGES.CONTENT_SCRIPT_ERROR)
+      }
+      return
     }
 
     // Display results
@@ -171,7 +193,12 @@ async function notifyHandler() {
     }
 
     if (!response.success) {
-      throw new Error(response.error || ERROR_MESSAGES.CONTENT_SCRIPT_ERROR)
+      if (response.needsReload) {
+        showError(response.error || ERROR_MESSAGES.CONNECTION_FAILED, '', true)
+      } else {
+        throw new Error(response.error || ERROR_MESSAGES.CONTENT_SCRIPT_ERROR)
+      }
+      return
     }
 
     showSuccess('Notification displayed!')
@@ -228,9 +255,17 @@ function sendMessageWithTimeout(tabId, message, timeout) {
 
         if (chrome.runtime.lastError) {
           console.warn('Send message error:', chrome.runtime.lastError)
+          const errorMessage = chrome.runtime.lastError.message
+
+          // Check for the specific "receiving end does not exist" error
+          const needsReload =
+            errorMessage.includes('receiving end does not exist') ||
+            errorMessage.includes('could not establish connection')
+
           return resolve({
             success: false,
-            error: chrome.runtime.lastError.message,
+            error: needsReload ? ERROR_MESSAGES.CONNECTION_FAILED : errorMessage,
+            needsReload: needsReload,
           })
         }
 
@@ -371,16 +406,24 @@ function showLoading(message) {
 }
 
 /**
- * Show error message with retry option
+ * Show error message with retry option or reload button
  * @param {string} message - The error message to display
  * @param {string} action - The action that failed (for retry button)
+ * @param {boolean} needsReload - Whether page reload is required to fix the error
  */
-function showError(message, action = '') {
+function showError(message, action = '', needsReload = false) {
   console.warn('Error shown to user:', message)
 
   let html = `<div class="message error">${sanitizeHTML(message)}</div>`
 
-  if (action) {
+  if (needsReload) {
+    html += `
+      <button class="reload-button">
+        Reload Page
+      </button>
+      <p class="reload-hint">The page needs to be reloaded for the extension to work properly.</p>
+    `
+  } else if (action) {
     html += `
       <button class="retry-button" data-action="${sanitizeHTML(action)}">
         Try Again

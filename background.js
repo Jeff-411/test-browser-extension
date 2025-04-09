@@ -22,6 +22,18 @@ chrome.runtime.onInstalled.addListener(async details => {
   console.log(`Extension ${details.reason}: ${new Date().toISOString()}`)
 
   try {
+    // Inject content script into all existing tabs - Added to resolve Issue #2
+    const tabs = await chrome.tabs.query({ url: ['http://*/*', 'https://*/*'] })
+
+    for (const tab of tabs) {
+      try {
+        await injectContentScript(tab.id)
+      } catch (error) {
+        console.warn('Failed to inject into tab:', tab.id, error)
+        // Continue with other tabs even if one fails
+      }
+    }
+
     // Check if settings already exist
     const result = await chrome.storage.local.get(STORAGE_KEYS.USER_SETTINGS)
 
@@ -110,6 +122,62 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Keep the message channel open for async response
   return true
 })
+
+// Handle navigation in single-page applications with proper filtering
+// *** Updated to resolve Issue #2
+chrome.webNavigation.onHistoryStateUpdated.addListener(
+  function (details) {
+    // Only inject if this is a top-level frame, not iframes
+    if (details.frameId === 0) {
+      console.log('History state updated:', details.url)
+
+      // Check if we have permission first
+      chrome.permissions.contains(
+        {
+          permissions: ['scripting'],
+          origins: [details.url],
+        },
+        hasPermission => {
+          if (hasPermission) {
+            chrome.scripting
+              .executeScript({
+                target: { tabId: details.tabId },
+                files: ['content.js'],
+              })
+              .catch(err => {
+                console.error('Content script injection failed:', err)
+                logError(new Error(err.message || 'Script injection failed'), 'historyStateUpdated')
+              })
+          } else {
+            console.log('No permission to inject script into:', details.url)
+          }
+        }
+      )
+    }
+  },
+  { url: [{ schemes: ['http', 'https'] }] }
+)
+
+/**
+ * *** Added to resolve Issue #2
+ * Injects content script into specified tab
+ * @param {number} tabId - The ID of the tab
+ * @returns {Promise} Resolves when injection is complete
+ */
+//
+async function injectContentScript(tabId) {
+  //
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ['content.js'],
+    })
+    console.log('Content script injected successfully into tab:', tabId)
+  } catch (error) {
+    console.error('Content script injection failed for tab:', tabId, error)
+    throw error
+  }
+}
 
 /**
  * Handles data retrieval requests
