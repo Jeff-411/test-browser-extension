@@ -27,8 +27,9 @@ chrome.runtime.onInstalled.addListener(async details => {
 
     for (const tab of tabs) {
       try {
-        await injectContentScript(tab.id)
+        await injectContentScript(tab.id, tab.title)
       } catch (error) {
+        console.warn('Re tab:', tab.title)
         console.warn('Failed to inject into tab:', tab.id, error)
         // Continue with other tabs even if one fails
       }
@@ -165,8 +166,7 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(
  * @returns {Promise} Resolves when injection is complete
  */
 //
-async function injectContentScript(tabId) {
-  //
+async function injectContentScript(tabId, tabTitle) {
   try {
     await chrome.scripting.executeScript({
       target: { tabId },
@@ -174,7 +174,7 @@ async function injectContentScript(tabId) {
     })
     console.log('Content script injected successfully into tab:', tabId)
   } catch (error) {
-    console.error('Content script injection failed for tab:', tabId, error)
+    console.error(`ERROR:\nTab id: ${tabId}\nTab title: ${tabTitle}\n${error}`)
     throw error
   }
 }

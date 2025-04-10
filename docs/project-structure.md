@@ -3,15 +3,17 @@
 test-browser-extension/
 ├── .vscode/
 │     └── settings.json
+├── assets/
+│      ├── icons/
+│      │    ├── icon16.png
+│      │    ├── icon48.png
+│      │    └── icon128.png
+│      └── README.html
 ├── docs/
 │     ├── _reference/
 │     └── project-structure.md
-├── icons/
-│     ├── icon16.png
-│     ├── icon48.png
-│     └── icon128.png
-├── images/
-│     └── placeholder.png
+├── scripts/
+│     └── sync-version.js
 ├── .gitignore
 ├── .prettierignore
 ├── background.js

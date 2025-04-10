@@ -5,9 +5,17 @@
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "package": "node scripts/sync-version.js package",
+    "version:patch": "npm version patch -m \"Release version %s\"",
+    "version:minor": "npm version minor -m \"Release version %s\"",
+    "version:major": "npm version major -m \"Release version %s\"",
+    "release": "git push && git push --tags",
+    "version": "node scripts/sync-version.js && git add manifest.json"
   },
   "repository": "https://github.com/Jeff-411/test-browser-extension",
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "adm-zip": "^0.5.16"
+  }
 }
