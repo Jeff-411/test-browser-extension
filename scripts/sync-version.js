@@ -42,6 +42,14 @@ async function packageExtension(outputPath = 'test-browser-extension.zip') {
       }
     }
 
+    // Add README.html to root of ZIP
+    const readmePath = path.join(rootDir, 'docs/distribution-package/README.html')
+    if (fs.existsSync(readmePath)) {
+      zip.addLocalFile(readmePath, '') // Empty string means root directory
+    } else {
+      console.warn('Warning: README.html not found')
+    }
+
     // Write the ZIP file
     const outputFilePath = path.resolve(rootDir, outputPath)
     zip.writeZip(outputFilePath)
