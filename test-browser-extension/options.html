@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Browser Extension - Options</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f9f9f9;
+        color: #333;
+        max-width: 800px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        color: #4285f4;
+        border-bottom: 1px solid #e0e0e0;
+        padding-bottom: 10px;
+      }
+
+      .option-group {
+        margin-bottom: 20px;
+        padding: 15px;
+        background-color: white;
+        border-radius: 5px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .option-group h2 {
+        margin-top: 0;
+        color: #555;
+        font-size: 18px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 10px;
+        font-weight: bold;
+      }
+
+      input[type='checkbox'] {
+        margin-right: 10px;
+      }
+
+      select,
+      input[type='text'] {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+
+      button {
+        background-color: #4285f4;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      button:hover {
+        background-color: #3b78e7;
+      }
+
+      #status {
+        margin-top: 15px;
+        padding: 10px;
+        border-radius: 4px;
+      }
+
+      .success {
+        background-color: #d4edda;
+        color: #155724;
+      }
+
+      .error {
+        background-color: #f8d7da;
+        color: #721c24;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Extension Options</h1>
+
+    <div class="option-group">
+      <h2>Appearance</h2>
+      <label> <input type="checkbox" id="darkMode" /> Enable Dark Mode </label>
+
+      <label for="fontSize">Font Size:</label>
+      <select id="fontSize">
+        <option value="small">Small</option>
+        <option value="medium" selected>Medium</option>
+        <option value="large">Large</option>
+      </select>
+    </div>
+
+    <div class="option-group">
+      <h2>Behavior</h2>
+      <label> <input type="checkbox" id="notifications" checked /> Enable Notifications </label>
+
+      <label> <input type="checkbox" id="autoAnalyze" /> Auto-analyze pages on load </label>
+    </div>
+
+    <div class="option-group">
+      <h2>Advanced Settings</h2>
+      <label for="apiKey">Custom API Key (if needed):</label>
+      <input type="text" id="apiKey" placeholder="Enter your API key" />
+    </div>
+
+    <button id="save">Save Settings</button>
+    <div id="status"></div>
+
+    <script>
+      // Save settings when button is clicked
+      document.getElementById('save').addEventListener('click', () => {
+        const settings = {
+          darkMode: document.getElementById('darkMode').checked,
+          fontSize: document.getElementById('fontSize').value,
+          notifications: document.getElementById('notifications').checked,
+          autoAnalyze: document.getElementById('autoAnalyze').checked,
+          apiKey: document.getElementById('apiKey').value,
+        }
+
+        chrome.storage.local.set({ userSettings: settings }, () => {
+          const status = document.getElementById('status')
+          status.textContent = 'Settings saved!'
+          status.className = 'success'
+
+          setTimeout(() => {
+            status.textContent = ''
+            status.className = ''
+          }, 3000)
+        })
+      })
+
+      // Load saved settings when page opens
+      document.addEventListener('DOMContentLoaded', () => {
+        chrome.storage.local.get('userSettings', data => {
+          if (data.userSettings) {
+            document.getElementById('darkMode').checked = !!data.userSettings.darkMode
+            document.getElementById('fontSize').value = data.userSettings.fontSize || 'medium'
+            document.getElementById('notifications').checked =
+              data.userSettings.notifications !== false
+            document.getElementById('autoAnalyze').checked = !!data.userSettings.autoAnalyze
+            document.getElementById('apiKey').value = data.userSettings.apiKey || ''
+          }
+        })
+      })
+    </script>
+  </body>
+</html>

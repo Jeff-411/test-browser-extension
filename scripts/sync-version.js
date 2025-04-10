@@ -11,6 +11,7 @@ async function packageExtension(outputPath = 'test-browser-extension.zip') {
   try {
     const zip = new AdmZip()
     const rootDir = path.resolve(__dirname, '..')
+    const assetsDir = path.join(rootDir, 'assets')
 
     // Files to include
     const filesToInclude = [
@@ -21,20 +22,19 @@ async function packageExtension(outputPath = 'test-browser-extension.zip') {
       'popup.css',
       'popup.js',
       'options.html',
-      'icons/icon16.png',
-      'icons/icon48.png',
-      'icons/icon128.png',
+      'assets/README.html',
     ]
 
     // Add each file to the ZIP
     for (const file of filesToInclude) {
       const filePath = path.join(rootDir, file)
       if (fs.existsSync(filePath)) {
-        if (path.dirname(file) !== '.') {
-          // For files in subdirectories, preserve the directory structure
+        if (file === 'assets/README.html') {
+          // Add README.html to root of zip
+          zip.addLocalFile(filePath, '', 'README.html')
+        } else if (path.dirname(file) !== '.') {
           zip.addLocalFile(filePath, path.dirname(file))
         } else {
-          // For files in root directory
           zip.addLocalFile(filePath)
         }
       } else {
@@ -42,12 +42,18 @@ async function packageExtension(outputPath = 'test-browser-extension.zip') {
       }
     }
 
-    // Add README.html to root of ZIP
-    const readmePath = path.join(rootDir, 'docs/distribution-package/README.html')
-    if (fs.existsSync(readmePath)) {
-      zip.addLocalFile(readmePath, '') // Empty string means root directory
+    // Add icons folder from assets
+    const iconsDir = path.join(assetsDir, 'icons')
+    if (fs.existsSync(iconsDir)) {
+      const iconFiles = fs.readdirSync(iconsDir)
+      for (const iconFile of iconFiles) {
+        const iconPath = path.join(iconsDir, iconFile)
+        if (fs.statSync(iconPath).isFile()) {
+          zip.addLocalFile(iconPath, 'icons')
+        }
+      }
     } else {
-      console.warn('Warning: README.html not found')
+      console.warn('Warning: Icons directory not found')
     }
 
     // Write the ZIP file

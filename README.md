@@ -107,25 +107,6 @@ This will:
 
 The extension will automatically check for updates using the update_url in manifest.json. When an update is available, Chrome will download and install it automatically.
 
-## Project Structure
-
-```
-test-browser-extension/
-├── icons/                 # Extension icons
-│   ├── icon16.png
-│   ├── icon48.png
-│   └── icon128.png
-├── images/                # Images used within the extension
-├── background.js          # Background service worker
-├── content.js             # Content script for webpage interaction
-├── manifest.json          # Extension configuration
-├── options.html           # Settings page
-├── popup.html             # Main extension UI
-├── popup.css              # Styling for popup
-├── popup.js               # Popup functionality
-└── README.md              # This documentation
-```
-
 ## Development
 
 This extension was developed using:
