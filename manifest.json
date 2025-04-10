@@ -17,20 +17,36 @@
     "service_worker": "background.js",
     "type": "module"
   },
-  "permissions": ["storage", "activeTab", "webNavigation", "scripting"],
-  "host_permissions": ["http://*/*", "https://*/*"],
+  "permissions": [
+    "storage",
+    "activeTab",
+    "webNavigation",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
   "options_page": "options.html",
   "content_scripts": [
     {
-      "matches": ["https://*/*"],
-      "js": ["content.js"],
+      "matches": [
+        "https://*/*"
+      ],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_end"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["images/*"],
-      "matches": ["https://*/*"],
+      "resources": [
+        "images/*"
+      ],
+      "matches": [
+        "https://*/*"
+      ],
       "use_dynamic_url": false
     }
   ],
