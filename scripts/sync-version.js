@@ -7,7 +7,7 @@ const AdmZip = require('adm-zip')
  * @param {string} outputPath - Path where ZIP file should be saved
  * @returns {Promise<string>} Path to the created ZIP file
  */
-async function packageExtension(outputPath = 'extension.zip') {
+async function packageExtension(outputPath = 'test-browser-extension.zip') {
   try {
     const zip = new AdmZip()
     const rootDir = path.resolve(__dirname, '..')
