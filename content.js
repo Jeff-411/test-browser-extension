@@ -6,15 +6,20 @@ if (!window._testExtensionInitialized) {
 
 // Function to show notification banner
 function showNotification() {
+  const bannerOpenTime = 30000
   const banner = document.createElement('div')
   banner.style.padding = '10px'
   banner.style.backgroundColor = '#f8f9fa'
-  banner.style.border = '1px solid #ddd'
+  banner.style.color = 'black'
+  // banner.style.border = '1px solid #ddd'
+  banner.style.border = '3px solid red'
   banner.style.position = 'fixed'
   banner.style.top = '0'
-  banner.style.right = '0'
+  // banner.style.right = '0'
+  banner.style.left = '0'
   banner.style.zIndex = '10000'
-  banner.style.fontSize = '14px'
+  // banner.style.fontSize = '14px'
+  banner.style.fontSize = '24px'
   banner.textContent = 'Test Browser Extension is active on this page'
 
   const closeButton = document.createElement('button')
@@ -30,7 +35,7 @@ function showNotification() {
     if (document.body.contains(banner)) {
       banner.remove()
     }
-  }, 5000)
+  }, bannerOpenTime)
 }
 
 // Listen for messages from popup or background script
