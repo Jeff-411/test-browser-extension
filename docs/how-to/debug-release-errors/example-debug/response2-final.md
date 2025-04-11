@@ -1,3 +1,6 @@
+Here is the complete corrected version of the `release.yml` file with the necessary `permissions` field added to ensure the workflow has the required access to perform all tasks:
+
+```yaml name=.github/workflows/release.yml
 name: Release Extension
 
 on:
@@ -76,3 +79,24 @@ jobs:
           asset_path: ./updates.xml
           asset_name: updates.xml
           asset_content_type: application/xml
+```
+
+### Explanation
+
+1. **`permissions`:**
+
+   - Explicitly grants `contents: write` and `packages: write` permissions to the `GITHUB_TOKEN`. These permissions are necessary for creating releases and uploading assets.
+
+2. **Other Elements:**
+   - The rest of the workflow remains unchanged and is designed to:
+     - Set up Node.js.
+     - Install dependencies.
+     - Create the `extension.zip` package.
+     - Generate the `updates.xml` file.
+     - Create a release and upload the necessary assets (`extension.zip` and `updates.xml`).
+
+### Next Steps
+
+- Replace your current `.github/workflows/release.yml` file with the corrected version above.
+- Push a tag (e.g., `v1.0.1`) to trigger the workflow.
+- Verify that the workflow completes successfully.
