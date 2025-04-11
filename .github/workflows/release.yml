@@ -5,6 +5,10 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write # Grants write access to repository contents
+  packages: write # Grants write access for package uploads
+
 jobs:
   build:
     runs-on: ubuntu-latest
