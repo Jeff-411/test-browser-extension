@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Test Browser Extension",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A simple test browser extension with optimized permissions and security features",
   "update_url": "https://raw.githubusercontent.com/Jeff-411/test-browser-extension/main/updates.xml",
   "action": {
@@ -17,20 +17,36 @@
     "service_worker": "background.js",
     "type": "module"
   },
-  "permissions": ["storage", "activeTab", "webNavigation", "scripting"],
-  "host_permissions": ["http://*/*", "https://*/*"],
+  "permissions": [
+    "storage",
+    "activeTab",
+    "webNavigation",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
   "options_page": "options.html",
   "content_scripts": [
     {
-      "matches": ["https://*/*"],
-      "js": ["content.js"],
+      "matches": [
+        "https://*/*"
+      ],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_end"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["images/*"],
-      "matches": ["https://*/*"],
+      "resources": [
+        "images/*"
+      ],
+      "matches": [
+        "https://*/*"
+      ],
       "use_dynamic_url": false
     }
   ],
