@@ -6,7 +6,7 @@ if (!window._testExtensionInitialized) {
 
 // Function to show notification banner
 function showNotification() {
-  const bannerOpenTime = 30000
+  const bannerOpenTime = 5000
   const banner = document.createElement('div')
   banner.style.padding = '10px'
   banner.style.backgroundColor = '#f8f9fa'
