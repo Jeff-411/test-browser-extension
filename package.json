@@ -9,7 +9,8 @@
     "version:minor": "npm version minor -m \"Release version %s\"",
     "version:major": "npm version major -m \"Release version %s\"",
     "release": "git push && git push --tags",
-    "version": "node scripts/sync-version.js && git add manifest.json"
+    "version": "node scripts/sync-version.js && git add manifest.json",
+    "demozip": "node generateDemoZip.js"
   },
   "repository": "https://github.com/Jeff-411/test-browser-extension",
   "author": "",

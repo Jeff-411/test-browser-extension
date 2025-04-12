@@ -1,4 +1,12 @@
 {
   "cSpell.ignorePaths": ["*.css"],
-  "cSpell.words": ["gupdate", "pplx", "sideload", "sideloaded", "Sideloading", "updatecheck"]
+  "cSpell.words": [
+    "demozip",
+    "gupdate",
+    "pplx",
+    "sideload",
+    "sideloaded",
+    "Sideloading",
+    "updatecheck"
+  ]
 }
