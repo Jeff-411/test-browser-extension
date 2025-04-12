@@ -7,10 +7,10 @@ const AdmZip = require('adm-zip')
  * @param {string} outputPath - Path where ZIP file should be saved
  * @returns {Promise<string>} Path to the created ZIP file
  */
-async function generateZip(outputPath = 'demoZip.zip') {
+async function generateZip(outputPath = './demoZip.zip') {
   try {
     const zip = new AdmZip()
-    const rootDir = path.resolve(__dirname, '..')
+    const rootDir = path.resolve(__dirname, '')
     const assetsDir = path.join(rootDir, 'assets')
 
     // Files to include
