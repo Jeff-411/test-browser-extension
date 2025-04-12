@@ -24,7 +24,7 @@ jobs:
         run: npm ci
 
       - name: Create extension package
-        run: node generateDemoZip.js
+        run: node generateExtensionPackage.js
 
       - name: Generate updates.xml
         run: |
@@ -57,7 +57,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./demoZip.zip
+          asset_path: ./extensionPackage.zip
           asset_name: extension.zip
           asset_content_type: application/zip
 
