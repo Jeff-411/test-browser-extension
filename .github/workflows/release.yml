@@ -24,7 +24,7 @@ jobs:
         run: npm ci
 
       - name: Create extension package
-        run: node generateExtensionPackage.js
+        run: node node scripts/generateExtensionPackage.js
 
       - name: Generate updates.xml
         run: |

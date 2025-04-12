@@ -13,7 +13,7 @@ async function generateZip(outputPath = './extensionPackage.zip') {
 
   try {
     const zip = new AdmZip()
-    const rootDir = path.resolve(__dirname, '')
+    const rootDir = path.resolve(__dirname, '..')
     const assetsDir = path.join(rootDir, 'assets')
 
     // Files to include - these are required
