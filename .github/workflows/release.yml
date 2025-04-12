@@ -6,8 +6,8 @@ on:
       - 'v*'
 
 permissions:
-  contents: write # Grants write access to repository contents
-  packages: write # Grants write access for package uploads
+  contents: write
+  packages: write
 
 jobs:
   build:
@@ -24,13 +24,7 @@ jobs:
         run: npm ci
 
       - name: Create extension package
-        run: |
-          zip -r extension.zip . \
-          -x "*.git*" \
-          -x "*.github*" \
-          -x "node_modules/*" \
-          -x "docs/*" \
-          -x "*.md"
+        run: node generateDemoZip.js
 
       - name: Generate updates.xml
         run: |
@@ -63,7 +57,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./extension.zip
+          asset_path: ./demoZip.zip
           asset_name: extension.zip
           asset_content_type: application/zip
 
