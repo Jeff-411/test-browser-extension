@@ -1,6 +1,6 @@
 {
   "name": "test-browser-extension",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "This is a Manifest V3 learning project.",
   "main": "index.js",
   "type": "commonjs",
